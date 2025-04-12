@@ -1,0 +1,50 @@
+@import "./base.css";
+
+#app {
+  /* max-width: 1365px; */
+  margin: 0 auto;
+  /* padding: 0 2rem; */
+  font-weight: normal;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+a {
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--anyue-black-font);
+}
+
+h3 {
+  font-weight: bold;
+}
+
+ul,
+button,
+input {
+  background-color: #fff;
+  border: 0;
+  margin: 0;
+  outline: 0;
+  padding: 0;
+}
+
+.pure-background {
+  background-color: var(--anyue-pure);
+}
+
+.light-background {
+  background-color: var(--anyue-light);
+}
+
+@media (hover: hover) {
+  a:hover {
+    color: #be5d0e;
+  }
+}
+
+@media (min-width: 1024px) {
+}
