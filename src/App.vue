@@ -4,7 +4,7 @@ import { ref, onBeforeMount } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 import { useLoginStore } from "@/stores/login.js";
 import { useUserStore } from "@/stores/user";
-import axios from '@/utils/axios.js'
+import request from "@/utils/request.js";
 
 const userStore = useUserStore();
 const login = useLoginStore();
@@ -23,7 +23,7 @@ onBeforeMount(() => {
     userInfo.value = userStore.userInfo;
     return;
   }
-  axios.get("/user/info").then((result) => {
+  request.getUserInfo().then((result) => {
     avatarUrl.value = result.avatar;
     userStore.setUserInfo(result);
   });
@@ -75,6 +75,7 @@ onBeforeMount(() => {
 <style lang="less" scoped>
 .anyue-main {
   width: 100%;
+  min-height: 100vh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -91,6 +92,7 @@ onBeforeMount(() => {
 }
 
 .pop-box {
+  z-index: 10;
   position: fixed;
   right: 94px;
   top: 50px;
@@ -163,6 +165,12 @@ nav {
 
 .anyue-content {
   width: 100%;
+  min-height: calc(100vh - 56px);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-light);
   // padding-inline: var(--bg-margin);
 }
 

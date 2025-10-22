@@ -18,7 +18,8 @@
     <div class="reading-info">
       <div class="reading-duration">
         <div class="statistics">
-          {{ userInfo.readingDuration }}<span>分钟</span>
+          {{ readingDuration.hour }}<span v-show="readingDuration.hour > 0">小时</span>
+          {{ readingDuration.min }}<span>分钟</span>
         </div>
         <span class="label">阅读时长</span>
       </div>
@@ -33,17 +34,19 @@
     </div>
     <div class="shelf-info">
       <div class="tab-nav">
-        <div :class="{active: tabActive==0}" @click="tabActive=0">书架</div>
-        <div :class="{active: tabActive==1}" @click="tabActive=1">读完·0</div>
+        <div :class="{ active: tabActive == 0 }" @click="tabActive = 0">
+          书架·{{ shelfBooks[0].length }}
+        </div>
+        <div :class="{ active: tabActive == 1 }" @click="tabActive = 1">
+          读完·{{ shelfBooks[1].length }}
+        </div>
       </div>
       <div class="book-list">
-        <div class="book-item" v-for="item in shelfBooks" :key="item.id">
-          <img
-            class="book-cover"
-            :src="item.cover"
-          />
-          <span class="title">{{item.title}}</span>
-        </div>
+        <a :href="`/book/${item.id}`" v-show="shelfBooks[tabActive].length > 0" class="book-item" v-for="item in shelfBooks[tabActive]" :key="item.id">
+          <img class="book-cover" :src="item.cover" />
+          <span class="title">{{ item.title }}</span>
+        </a>
+        <div v-show="shelfBooks[tabActive].length == 0" class="no-book">暂无书籍</div>
       </div>
       <div class="button"><a href="/bookshelf">查看书架</a></div>
     </div>
@@ -52,8 +55,8 @@
 
 <script setup>
 import Avatar from "@/components/Avatar.vue";
-import { ref, onBeforeMount } from "vue";
-import axios from "@/utils/axios.js";
+import { ref, reactive, onBeforeMount } from "vue";
+import request from "@/utils/request.js";
 import { useToast } from "vue-toast-notification";
 import { useUserStore } from "@/stores/user";
 
@@ -62,23 +65,33 @@ const file = ref(null);
 const fileInput = ref();
 const avatarUrl = ref();
 const userInfo = ref();
-const shelfBooks = ref()
-const tabActive = ref(0)
+const shelfBooks = reactive([[], []])
+const tabActive = ref(0);
+const readingDuration = reactive({
+  hour: 0,
+  min: 0,
+});
 
 const userStore = useUserStore();
 const maxSize = 2 * 1024 * 1024;
 
 onBeforeMount(() => {
-  axios.get("/bookshelf/list").then(response => {
-    shelfBooks.value = response.splice(0, 5)
-  })
+  request.getShelfBooks().then((response) => {
+    shelfBooks[0] = response.splice(0, 5);
+    shelfBooks[1] = shelfBooks[0].filter((item) => item.readingStatus == 2);
+    console.log(shelfBooks)
+  });
   if (userStore.userInfo != null) {
     userInfo.value = userStore.userInfo;
+    readingDuration.hour = Math.floor(userInfo.value.readingDuration / 60);
+    readingDuration.min = userInfo.value.readingDuration % 60;
     return;
   }
-  axios.get("/user/info").then((result) => {
+  request.getUserInfo().then((result) => {
     userInfo.value = result;
-    userStore.setUserInfo(result);
+    readingDuration.hour = Math.floor(userInfo.value.readingDuration / 60);
+    readingDuration.min = userInfo.value.readingDuration % 60;
+    userStore.setUserInfo(userInfo.value);
   });
 });
 
@@ -105,12 +118,8 @@ const uploadFile = async () => {
   const formData = new FormData();
   formData.append("file", file.value);
 
-  axios
-    .post("/upload/image", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    })
+  request
+    .uploadAvatar()
     .then((response) => {
       userInfo.value.avatar = response;
     })
@@ -122,11 +131,15 @@ const uploadFile = async () => {
 
 <style lang="less" scoped>
 .profile-wrapper {
+  position: absolute;
+  // left: 0;
+  // right: 0;
   height: calc(100vh - 56px);
+  max-width: 1200px;
   background: var(--color-background-light);
   padding-inline: var(--bg-padding);
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
   flex-direction: column;
   align-items: center;
   .top-header {
@@ -223,5 +236,16 @@ const uploadFile = async () => {
     width: 120px;
     height: 160px;
   }
+}
+
+.no-book {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #b6b6b6;
 }
 </style>

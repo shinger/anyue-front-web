@@ -1,12 +1,19 @@
 <script setup>
 import Epub, { Book, EpubCFI, Layout, Rendition } from "epubjs";
 import Themes from "epubjs/lib/themes";
-import axios from "@/utils/axios.js";
-import { onBeforeMount, onMounted, ref, onBeforeUnmount } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import request from "@/utils/request.js";
+import {
+  onBeforeMount,
+  onMounted,
+  ref,
+  onBeforeUnmount,
+  onUnmounted,
+} from "vue";
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
+const book = ref(null);
 const rendition = ref(null);
 const openSetting = ref(0);
 const showDot = ref(2);
@@ -18,6 +25,8 @@ const totalDuration = ref();
 const timerIsActive = ref(true);
 const locations = ref(null);
 const readingRecord = ref(null);
+const finishedPage = ref(false);
+const readFinished = ref(false)
 
 // 页面离开前调用
 const beforeLeave = () => {
@@ -28,13 +37,15 @@ const beforeLeave = () => {
   // 记录结束时间
   endTime.value = new Date().getTime();
   if (timerIsActive.value) {
+    // totalDuration.value = (endTime.value - startTime.value) / 60000;
     totalDuration.value = (endTime.value - startTime.value) / 60000;
   }
+  console.log("本次阅读时长(Min)：", Math.floor(totalDuration.value));
   window.removeEventListener("visibilitychange", handleVisibilityChange);
 
   const progress = locations.value.percentageFromCfi(location.start.cfi);
-  axios
-    .post("/reading/record/upload", {
+  request
+    .uploadReadingRecord({
       bookId: route.params.id,
       lastReadCfi: cfiString,
       readingProgress: progress.toFixed(4) * 100,
@@ -46,7 +57,7 @@ const beforeLeave = () => {
 };
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+onBeforeRouteLeave((to, from) => {
   if (from.path === route.path) {
     beforeLeave();
   }
@@ -78,6 +89,14 @@ onBeforeUnmount(() => {
   // 移除事件监听
   window.removeEventListener("beforeunload", beforeLeave);
   window.removeEventListener("unload", beforeLeave);
+
+  // 销毁 EPUB 对象
+  if (rendition.value) {
+    rendition.value.destroy();
+  }
+  if (book.value) {
+    book.value = null;
+  }
 });
 
 // 切换字体
@@ -127,18 +146,20 @@ const renderEpub = (url) => {
   }
 
   // 加载书本
-  let book = new Book(url);
-  book.loaded.navigation.then((doc) => {
+  book.value = new Book(url);
+  // console.log(book.value.loaded.navigation)
+  book.value.loaded.navigation.then((doc) => {
     tocList.value = doc.toc;
-    book.locations.generate();
-    locations.value = book.locations;
+    book.value.locations.generate();
+    locations.value = book.value.locations;
   });
   // 渲染
-  rendition.value = book.renderTo("read", {
+  rendition.value = book.value.renderTo("read", {
     width: "93%",
     height: "96%",
     layout: layout,
     spread: "auto",
+    manager: "continuous",
   });
 
   // 设置默认样式
@@ -158,34 +179,91 @@ const renderEpub = (url) => {
   });
   // 展示
   rendition.value.display().then(() => {
-    if (readingRecord.value != null && readingRecord.value.lastReadCfi != null) {
-      rendition.value.display(readingRecord.value.lastReadCfi);
+    if (
+      readingRecord.value != null &&
+      readingRecord.value.lastReadCfi != null
+    ) {
+      // 展示上次阅读的进度
+      rendition.value.display(readingRecord.value.lastReadCfi).then(() => {
+        // 定位当前目录位置并添加高亮
+        const location = rendition.value.currentLocation();
+        setHighLight(location);
+      });
     }
   });
 };
 
 // 发起请求获取书本信息
-axios.get(`/book/${route.params.id}`).then((result) => {
+request.getBookInfo(route.params.id).then((result) => {
   bookInformation.value = result;
 });
 
-axios.get(`/reading/record/${route.params.id}`).then((result) => {
+request.getReadingRecord(route.params.id).then((result) => {
   readingRecord.value = result;
 });
 
 // 发起请求获取
-axios.get(`/bookshelf/${route.params.id}`).then((response) => {
+request.getBookEpub(route.params.id).then((response) => {
   renderEpub(response);
 });
 
 // 上一页
 const preview = () => {
-  rendition.value.prev();
+  if (finishedPage.value) {
+    finishedPage.value = false;
+    return;
+  }
+  rendition.value.prev().then(() => {
+    const location = rendition.value.currentLocation();
+    setHighLight(location);
+  });
 };
 
 // 下一页
 const next = () => {
-  rendition.value.next();
+  const currentLocation = rendition.value.currentLocation();
+
+  rendition.value.next().then(() => {
+    setHighLight(currentLocation);
+  });
+
+  // 最后一页的逻辑
+  const locationLength = locations.value.length();
+  const lastEpubCfi = locations.value._locations[locationLength - 1].replace(
+    /,(.*?),/,
+    ""
+  );
+  if (lastEpubCfi == currentLocation.end.cfi) {
+    finishedPage.value = true;
+    console.log("已经是最后一页");
+  }
+};
+
+const setHighLight = (location) => {
+  // console.log(Number(location.start.cfi.split("/")[2].splice(0, -1))/2)
+  // console.log(location.start.cfi.split("/")[2].slice(0,-1))
+  // console.log(location)
+  // console.log(book.value.spine)
+  let takeLast = 0;
+  for (let i = 0; i < tocList.value.length; i++) {
+    if (tocList.value[i].highLight) {
+      takeLast = i;
+    }
+    tocList.value[i].highLight = false;
+    if (tocList.value[i].href === location.start.href) {
+      tocList.value[i].highLight = true;
+      return;
+    }
+  }
+  tocList.value[takeLast].highLight = true;
+};
+
+// 标记读完
+const markFinished = () => {
+  request.markFinished(route.params.id).then((result) => {
+    console.log(result);
+    readFinished.value = true;
+  });
 };
 </script>
 
@@ -205,9 +283,23 @@ const next = () => {
             </a>
             <div class="toc-wrapper">
               <nav class="toc-list">
-                <li class="toc-item" v-for="item in tocList" :key="item.id">
-                  <a @click="changeToc(item)">{{ item.label }}</a>
-                </li>
+                <div
+                  class="toc-item"
+                  v-for="item in tocList"
+                  :class="{ highLight: item.highLight == true }"
+                  :key="item.id"
+                >
+                  <li>
+                    <a @click="changeToc(item)">{{ item.label }}</a>
+                  </li>
+                  <li
+                    class="sub-toc-item"
+                    v-for="subItem in item.subitems"
+                    :key="subItem.id"
+                  >
+                    <a @click="changeToc(subItem)">{{ subItem.label }}</a>
+                  </li>
+                </div>
               </nav>
             </div>
           </div>
@@ -239,6 +331,11 @@ const next = () => {
           </div>
         </div>
       </div>
+      <div class="reading-finished" v-show="finishedPage">
+        <p>已读完</p>
+        <button v-if="!readFinished" class="anyue-button" @click="markFinished">标记读完</button>
+      </div>
+
       <div class="paginate-mask">
         <div class="opt-bar">
           <button class="paginate-btn" @click="preview">&lt; prev</button>
@@ -346,6 +443,7 @@ main {
 }
 
 .book-page {
+  position: relative;
   height: calc(100vh - 120px);
   background: var(--color-page);
   border-radius: 8px;
@@ -359,6 +457,26 @@ main {
       padding-left: 7%;
       padding-top: 3%;
     }
+  }
+}
+.reading-finished {
+  position: absolute;
+  top: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background-color: var(--color-page);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  font-size: 20px;
+  .anyue-button {
+    font-size: 14px;
+    width: 60px;
+    height: 30px;
+    margin-block: 8px;
   }
 }
 .setting-wrapper {
@@ -415,9 +533,18 @@ main {
       align-items: flex-start;
       .toc-item {
         border-top: 1px solid var(--color-border);
-        height: 48px;
         line-height: 48px;
         font-size: 16px;
+        .sub-toc-item {
+          padding-left: 12px;
+          border-top: 1px solid var(--color-border);
+          height: 42px;
+          line-height: 42px;
+          font-size: 14px;
+        }
+      }
+      .highLight li:first-child a {
+        color: #c28e32;
       }
     }
   }

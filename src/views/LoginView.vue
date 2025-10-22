@@ -88,8 +88,7 @@
 <script setup>
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
-import md5 from "js-md5";
-import axios from "@/utils/axios.js";
+import request from "@/utils/request.js";
 import { useToast } from "vue-toast-notification";
 import { useLoginStore } from "@/stores/login";
 
@@ -131,18 +130,12 @@ const submitRegister = () => {
   if (!registerFormValid()) {
     return;
   }
-  axios
-    .post("/user/register", {
-      username: registerForm.username,
-      email: registerForm.email,
-      password: md5(registerForm.password),
-    })
-    .then((result) => {
-      localStorage.setItem("token", result);
-      login.updateLogin();
-      toast.success("注册成功");
-      router.push("/");
-    });
+  request.userRegister(registerForm).then((result) => {
+    localStorage.setItem("token", result);
+    login.updateLogin();
+    toast.success("注册成功");
+    router.push("/");
+  });
 };
 
 const submitLogin = () => {
@@ -150,19 +143,13 @@ const submitLogin = () => {
     toast.error("邮箱和密码不能为空");
     return;
   }
-  axios
-    .post("/user/login", {
-      email: loginForm.email,
-      password: md5(loginForm.password),
-    })
-    .then((result) => {
-      console.log(result);
-      localStorage.setItem("token", result);
-      login.updateLogin();
-      toast.success("登录成功");
-      window.location.reload()
-      router.push("/");
-    });
+  request.userLogin(loginForm).then((result) => {
+    console.log(result);
+    localStorage.setItem("token", result);
+    login.updateLogin();
+    toast.success("登录成功");
+    router.push("/");
+  });
 };
 </script>
 

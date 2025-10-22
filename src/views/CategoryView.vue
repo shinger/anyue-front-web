@@ -64,7 +64,7 @@
 <script setup>
 import { onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "@/utils/axios.js";
+import request from "@/utils/request.js";
 
 const router = useRouter();
 const categoryList = ref([]);
@@ -82,8 +82,8 @@ const toIntroPage = (id) => {
 const getAll = () => {
   isAll.value = true;
   activeSubCategory.value = null;
-  axios
-    .get(`/book/category/${activeMainCategory.value.id}`)
+  request
+    .getCategoryBooks(activeMainCategory.value.id)
     .then((result) => {
       currentBookList.value = result;
     })
@@ -95,8 +95,8 @@ const getAll = () => {
 const changeCategory = (item) => {
   activeMainCategory.value = item;
   isAll.value = true;
-  axios
-    .get(`/categories/${item.id}`)
+  request
+    .getCategories(item.id)
     .then((result) => {
       subCategoryList.value = result;
     })
@@ -109,8 +109,8 @@ const changeCategory = (item) => {
 const changeSubCategory = (item) => {
   activeSubCategory.value = item;
   isAll.value = false;
-  axios
-    .get(`/book/category/${item.id}`)
+  request
+    .getCategoryBooks(item.id)
     .then((result) => {
       currentBookList.value = result;
     })
@@ -123,8 +123,8 @@ let loaded = false;
 
 onBeforeMount(() => {
   if (!loaded) {
-    axios
-      .get("/categories/0")
+    request
+      .getCategories(0)
       .then((result) => {
         categoryList.value = result;
         changeCategory(result[0]);
@@ -139,6 +139,8 @@ onBeforeMount(() => {
 
 <style lang="less" scoped>
 .category-wrapper {
+  position: absolute;
+  top: 0;
   padding-inline: var(--bg-padding);
   display: flex;
   justify-content: flex-start;
@@ -146,7 +148,7 @@ onBeforeMount(() => {
 .left-category-list {
   width: 200px;
   height: calc(100vh - 50px);
-  border-right: 2px solid var(--color-border);
+  // border-right: 2px solid var(--color-border);
   .category-item {
     margin-block: 8px;
     width: 100%;
@@ -168,9 +170,9 @@ onBeforeMount(() => {
 }
 .right-category-content {
   width: 100%;
+  border-left: 2px solid var(--color-border);
   .sub-category-top {
-    height: 100px;
-    padding-left: 40px;
+    padding: 20px 20px;
     border-bottom: 2px solid var(--color-border);
     display: flex;
     flex-direction: column;
@@ -178,10 +180,11 @@ onBeforeMount(() => {
 }
 .sub-category-list {
   margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 创建 5 列 */
-  grid-template-rows: repeat(3, 40px); /* 创建 3 行，每行高度 100px */
-  gap: 10px; /* 网格项之间的间距 */
+  display: flex;
+  flex-wrap: wrap;
+  // grid-template-columns: repeat(5, 1fr); /* 创建 5 列 */
+  // grid-template-rows: repeat(3, 40px); /* 创建 3 行，每行高度 100px */
+  gap: 50px; /* 网格项之间的间距 */
   font-size: 16px;
 
   .sub-category-item {
@@ -201,6 +204,7 @@ onBeforeMount(() => {
   margin-top: 40px;
   .book-item {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     padding: 24px 18px;
     &:hover {
@@ -212,7 +216,8 @@ onBeforeMount(() => {
       height: 162px;
     }
     .book-content {
-      margin-left: 24px;
+      width: 600px;
+      margin: 12px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;

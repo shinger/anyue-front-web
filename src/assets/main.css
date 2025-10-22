@@ -42,9 +42,25 @@ input {
 
 @media (hover: hover) {
   a:hover {
-    color: #be5d0e;
+    color: #be5d0e !important;
   }
 }
 
 @media (min-width: 1024px) {
+}
+
+.anyue-button {
+  background-color: #e37924;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.anyue-button:hover {
+  background-color: #d76b15;
+}
+
+.middle-inline {
+  display: inline-block;
+  vertical-align: middle;
 }

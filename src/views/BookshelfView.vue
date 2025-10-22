@@ -1,14 +1,15 @@
 <script setup>
 import FileUpload from '@/components/FileUpload.vue'
 import {onBeforeMount, ref} from 'vue'
-import axios from "@/utils/axios.js";
+import request from "@/utils/request.js";
 
 
 const books = ref([])
 
 onBeforeMount(() => {
-  axios.get("/bookshelf/list").then(response => {
+  request.getShelfBooks().then(response => {
     books.value = response
+    console.log(response)
   })
 })
 
@@ -33,6 +34,8 @@ onBeforeMount(() => {
 <style lang="less" scoped>
 main {
   width: 100%;
+  position: absolute;
+  top: 0;
   padding-inline: var(--bg-padding);
 }
 .shelf-list {

@@ -32,19 +32,19 @@
 </template>
 
 <script setup>
-import axios from "@/utils/axios.js";
+import request from "@/utils/request.js";
 import { onBeforeMount, ref } from "vue";
 
 const recommendList = ref([]);
 
 onBeforeMount(() => {
-  axios.get("/recommend/common").then((result) => {
+  request.getRecommends().then((result) => {
     recommendList.value = result;
   });
 });
 
 const changeBatch = () => {
-  axios.get("/recommend/common").then((result) => {
+  request.getRecommends().then((result) => {
     recommendList.value = result;
   });
 }
@@ -52,10 +52,13 @@ const changeBatch = () => {
 
 <style lang="less" scoped>
 .home-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   background: var(--color-background-light);
   padding-top: 1rem;
   padding-inline: var(--bg-padding);
-  height: calc(100vh);
 }
 
 .menu-list {
@@ -93,7 +96,7 @@ const changeBatch = () => {
 .content-list {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
   margin-block: 1rem;
   .book-card {

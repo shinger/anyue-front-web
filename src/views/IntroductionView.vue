@@ -40,14 +40,28 @@
       <div class="time-count statistics-item">
         <p>我的阅读</p>
         <div class="statistics-item" v-if="readingStatus == 0">
-          <p style="font-size:16px;" v-if="readingDuration==0">无阅读记录</p>
-          <p style="font-size:16px;" v-else><span class="large">{{readingDuration}}</span>分钟</p>
-          <p>去标记</p>
+          <p style="font-size: 16px" v-if="readingDuration == 0">无阅读记录</p>
+          <div style="font-size: 16px" v-else>
+            <p v-show="readingDuration.hour">
+              <span class="large">{{ readingDuration.hour }}</span
+              ><span>小时</span>
+            </p>
+            <span class="large">{{ readingDuration.min }}</span
+            ><span>分钟</span>
+          </div>
         </div>
         <div v-if="readingStatus == 1">
-          <p><span class="large">{{readingDuration}}</span>分钟</p>
-          <p>在读</p>
+          <p>
+            <span v-show="readingDuration.hour">
+              <span class="large">{{ readingDuration.hour }}</span
+              ><span>小时</span>
+            </span>
+            <span class="large">{{ readingDuration.min }}</span
+            ><span>分钟</span>
+          </p>
         </div>
+        <p v-if="readingStatus == 1">在读</p>
+        <p v-else>去标记</p>
       </div>
       <span class="separator"></span>
       <div class="word-count statistics-item">
@@ -76,46 +90,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeMount } from "vue";
+import { ref, reactive, onMounted, onBeforeMount } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import axios from "@/utils/axios.js";
+import request from "@/utils/request.js";
 
 const route = useRoute();
 const router = useRouter();
 const bookInformation = ref(null);
 const isInShelf = ref(false);
 const readingStatus = ref(0);
-const readingDuration = ref(null);
+const readingDuration = reactive({
+  hour: 0,
+  min: 0,
+});
 
 onBeforeMount(() => {
   // 获取书本信息
-  axios.get(`/book/${route.params.id}`).then((result) => {
+  request.getBookInfo(route.params.id).then((result) => {
     bookInformation.value = result;
   });
   // 是否在书架内
-  axios.get(`/bookshelf/inshelf//${route.params.id}`).then((result) => {
+  request.getIsInShelf(route.params.id).then((result) => {
     isInShelf.value = result;
   });
   // 获取阅读进度
-  axios.get(`/reading/record/${route.params.id}`).then((result) => {
+  request.getReadingRecord(route.params.id).then((result) => {
     console.log(result);
     if (result != 0) {
       readingStatus.value = result.readingStatus;
-      readingDuration.value = result.readingDuration;
+      let duration = result.readingDuration;
+      readingDuration.hour = Math.floor(duration / 60);
+      readingDuration.min = Math.floor(duration % 60);
+      console.log(readingDuration);
     }
   });
 });
 
 const join2shelf = () => {
   if (isInShelf.value) {
-    axios
-      .delete(`/bookshelf/remove/${bookInformation.value.id}`)
-      .then((result) => {
-        isInShelf.value = false;
-      });
+    request.removeFromShelf(route.params.id).then((result) => {
+      isInShelf.value = false;
+    });
     return;
   }
-  axios.post(`/bookshelf/join/${bookInformation.value.id}`).then((result) => {
+  request.addToShelf(route.params.id).then((result) => {
     console.log(result);
     isInShelf.value = true;
     router.push("/bookshelf");
@@ -129,6 +147,10 @@ const read = () => {
 
 <style lang="less" scoped>
 .introduction-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   padding-inline: var(--bg-padding);
   margin-top: 28px;
   display: flex;
@@ -196,7 +218,8 @@ section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-inline: 48px;
+    justify-content: center;
+    margin-inline: var(--margin-inline);
     color: #76787c;
     font-weight: 100;
     font-size: 12px;
@@ -207,4 +230,5 @@ section {
     }
   }
 }
+
 </style>
