@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "epubjs": "^0.3.93",
+    "epubjs": "file:lib/epubjs",
     "js-md5": "^0.8.3",
     "pinia": "^2.1.7",
     "vue": "^3.4.29",

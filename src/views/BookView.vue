@@ -1,6 +1,7 @@
 <script setup>
 import Epub, { Book, EpubCFI, Layout, Rendition } from "epubjs";
-import Themes from "epubjs/lib/themes";
+// import Themes from "epubjs/lib/themes";
+import Themes from "epubjs/src/themes";
 import request from "@/utils/request.js";
 import {
   onBeforeMount,
@@ -26,7 +27,8 @@ const timerIsActive = ref(true);
 const locations = ref(null);
 const readingRecord = ref(null);
 const finishedPage = ref(false);
-const readFinished = ref(false)
+const readFinished = ref(false);
+const highLightTocIndex = ref(null);
 
 // 页面离开前调用
 const beforeLeave = () => {
@@ -107,7 +109,10 @@ const changeFont = (i) => {
 
 // 切换目录
 const changeToc = (item) => {
-  rendition.value.display(item.href);
+  rendition.value.display(item.href).then(() => {
+    const location = rendition.value.currentLocation();
+    setHighLight(location);
+  });
 };
 
 // 设置
@@ -121,6 +126,8 @@ const onSetting = (i) => {
     testLog();
   }
 };
+
+
 
 // 渲染Epub
 const renderEpub = (url) => {
@@ -224,7 +231,7 @@ const next = () => {
   const currentLocation = rendition.value.currentLocation();
 
   rendition.value.next().then(() => {
-    setHighLight(currentLocation);
+    setHighLight(rendition.value.currentLocation());
   });
 
   // 最后一页的逻辑
@@ -240,25 +247,38 @@ const next = () => {
 };
 
 const setHighLight = (location) => {
-  // console.log(Number(location.start.cfi.split("/")[2].splice(0, -1))/2)
-  // console.log(location.start.cfi.split("/")[2].slice(0,-1))
-  // console.log(location)
-  // console.log(book.value.spine)
-  let takeLast = 0;
-  for (let i = 0; i < tocList.value.length; i++) {
-    if (tocList.value[i].highLight) {
-      takeLast = i;
-    }
-    tocList.value[i].highLight = false;
-    if (tocList.value[i].href === location.start.href) {
-      tocList.value[i].highLight = true;
-      return;
+  // console.log("Set highlight location: ", location);
+  if (highLightTocIndex.value != null) {
+    if (highLightTocIndex.value.s_index == null) {
+      tocList.value[highLightTocIndex.value.p_index].highLight = false;
+    } else {
+      tocList.value[highLightTocIndex.value.p_index].subitems[
+        highLightTocIndex.value.s_index
+      ].highLight = false;
     }
   }
-  tocList.value[takeLast].highLight = true;
+  for (let i = 0; i < tocList.value.length; i++) {
+    if (tocList.value[i].href == location.end.href) {
+      tocList.value[i].highLight = true;
+      highLightTocIndex.value = {
+        p_index: i,
+        s_index: null,
+      };
+      break;
+    }
+    for (let j = 0; j < tocList.value[i].subitems.length; j++) {
+      if (tocList.value[i].subitems[j].href == location.end.href) {
+        tocList.value[i].subitems[j].highLight = true;
+        highLightTocIndex.value = {
+          p_index: i,
+          s_index: j,
+        };
+        break;
+      }
+    }
+  }
 };
 
-// 标记读完
 const markFinished = () => {
   request.markFinished(route.params.id).then((result) => {
     console.log(result);
@@ -286,14 +306,15 @@ const markFinished = () => {
                 <div
                   class="toc-item"
                   v-for="item in tocList"
-                  :class="{ highLight: item.highLight == true }"
+                  
                   :key="item.id"
                 >
-                  <li>
+                  <li :class="{ highLight: item.highLight == true }">
                     <a @click="changeToc(item)">{{ item.label }}</a>
                   </li>
                   <li
                     class="sub-toc-item"
+                    :class="{ highLight: subItem.highLight == true }"
                     v-for="subItem in item.subitems"
                     :key="subItem.id"
                   >
@@ -333,7 +354,9 @@ const markFinished = () => {
       </div>
       <div class="reading-finished" v-show="finishedPage">
         <p>已读完</p>
-        <button v-if="!readFinished" class="anyue-button" @click="markFinished">标记读完</button>
+        <button v-if="!readFinished" class="anyue-button" @click="markFinished">
+          标记读完
+        </button>
       </div>
 
       <div class="paginate-mask">
@@ -482,10 +505,10 @@ main {
 .setting-wrapper {
   z-index: 10;
   width: 360px;
-  height: 598px;
   position: fixed;
   right: 128px;
   top: 88px;
+  bottom: 32px;
   background: var(--color-background-pure);
   border-radius: 8px;
   padding: 16px;
@@ -543,7 +566,7 @@ main {
           font-size: 14px;
         }
       }
-      .highLight li:first-child a {
+      .highLight a {
         color: #c28e32;
       }
     }

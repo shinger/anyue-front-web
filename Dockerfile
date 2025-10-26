@@ -1,7 +1,8 @@
 FROM node:22 
 WORKDIR /usr/local/anread/anread-web
 
-COPY ./package.json ./package-lock.json ./
+COPY ./package.json ./
+COPY ./lib/epubjs ./lib/epubjs
 RUN npm install
 COPY ./index.html ./jsconfig.json ./vite.config.js ./
 COPY ./src ./src
