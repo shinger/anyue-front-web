@@ -1,5 +1,5 @@
 FROM node:22 
-WORKDIR /usr/local/anread/anread-web
+WORKDIR /usr/local/anread/anread-web-user
 
 COPY ./package.json ./
 COPY ./lib/epubjs ./lib/epubjs

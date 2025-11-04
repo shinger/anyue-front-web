@@ -29,18 +29,29 @@ const readingRecord = ref(null);
 const finishedPage = ref(false);
 const readFinished = ref(false);
 const highLightTocIndex = ref(null);
+const fonts = ref([
+  {
+    name: "默认",
+    value: "system-ui",
+  },
+  {
+    name: "霞鹜文楷",
+    value: "LXGW",
+  },
+]);
 
 // 页面离开前调用
 const beforeLeave = () => {
   // 获取当前阅读位置
   let location = rendition.value.currentLocation();
   let cfiString = location.start.cfi;
+  console.log(cfiString);
 
   // 记录结束时间
   endTime.value = new Date().getTime();
   if (timerIsActive.value) {
     // totalDuration.value = (endTime.value - startTime.value) / 60000;
-    totalDuration.value = (endTime.value - startTime.value) / 60000;
+    totalDuration.value = (endTime.value - startTime.value) / 1000;
   }
   console.log("本次阅读时长(Min)：", Math.floor(totalDuration.value));
   window.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -102,9 +113,13 @@ onBeforeUnmount(() => {
 });
 
 // 切换字体
-const changeFont = (i) => {
+const changeFontSize = (i) => {
   showDot.value = i;
   rendition.value.themes.fontSize(12 + i * 2 + "px");
+};
+
+const changeFont = (font) => {
+  rendition.value.themes.font(font);
 };
 
 // 切换目录
@@ -126,8 +141,6 @@ const onSetting = (i) => {
     testLog();
   }
 };
-
-
 
 // 渲染Epub
 const renderEpub = (url) => {
@@ -169,21 +182,23 @@ const renderEpub = (url) => {
     manager: "continuous",
   });
 
+  rendition.value.hooks.content.register((contents) => {
+    // Promise.all([
+    //   contents.addStylesheet("http://localhost:9000/general/font.css"),
+    // ]);
+    Promise.all([
+      contents.addStylesheetRules({
+        "@font-face": {
+          "font-family": "LXGW",
+          src: "url('http://127.0.0.1:9000/general/LXGWWenKai-Regular.ttf')",
+        },
+      }, "fonts"),
+    ]);
+  });
+
   // 设置默认样式
   let themes = new Themes(rendition.value);
-  themes.default({
-    p: {
-      margin: "0.5em 1em !important",
-    },
-    ".block_9,.block_12": {
-      "line-height": "1.8",
-      margin: "12px",
-      "text-indent": "0",
-    },
-    ".calibre": {
-      "font-size": "1.1em",
-    },
-  });
+
   // 展示
   rendition.value.display().then(() => {
     if (
@@ -197,6 +212,20 @@ const renderEpub = (url) => {
         setHighLight(location);
       });
     }
+
+    themes.default({
+      p: {
+        margin: "0.5em 1em !important",
+      },
+      ".block_9,.block_12": {
+        "line-height": "1.8",
+        margin: "12px",
+        "text-indent": "0",
+      },
+      ".calibre": {
+        "font-size": "1.1em",
+      },
+    });
   });
 };
 
@@ -247,36 +276,53 @@ const next = () => {
 };
 
 const setHighLight = (location) => {
-  // console.log("Set highlight location: ", location);
+  console.log("Set highlight location: ", location);
   if (highLightTocIndex.value != null) {
-    if (highLightTocIndex.value.s_index == null) {
-      tocList.value[highLightTocIndex.value.p_index].highLight = false;
+    if (highLightTocIndex.value[1] == null) {
+      tocList.value[highLightTocIndex.value[0]].highLight = false;
     } else {
-      tocList.value[highLightTocIndex.value.p_index].subitems[
-        highLightTocIndex.value.s_index
+      tocList.value[highLightTocIndex.value[0]].subitems[
+        highLightTocIndex.value[1]
       ].highLight = false;
     }
   }
-  for (let i = 0; i < tocList.value.length; i++) {
-    if (tocList.value[i].href == location.end.href) {
-      tocList.value[i].highLight = true;
-      highLightTocIndex.value = {
-        p_index: i,
-        s_index: null,
-      };
-      break;
-    }
-    for (let j = 0; j < tocList.value[i].subitems.length; j++) {
-      if (tocList.value[i].subitems[j].href == location.end.href) {
-        tocList.value[i].subitems[j].highLight = true;
-        highLightTocIndex.value = {
-          p_index: i,
-          s_index: j,
-        };
-        break;
-      }
-    }
+  highLightTocIndex.value = location.mapTocIndex;
+  if (location.mapTocIndex[1] != null) {
+    tocList.value[location.mapTocIndex[0]].subitems[
+      location.mapTocIndex[1]
+    ].highLight = true;
+  } else {
+    tocList.value[location.mapTocIndex[0]].highLight = true;
   }
+
+  // if (highLightTocIndex.value != null) {
+  //   if (highLightTocIndex.value.s_index == null) {
+  //     tocList.value[highLightTocIndex.value.p_index].highLight = false;
+  //   } else {
+  //     tocList.value[highLightTocIndex.value.p_index].subitems[
+  //       highLightTocIndex.value.s_index
+  //     ].highLight = false;
+  //   }
+  // }
+  // for (let i = 0; i < tocList.value.length; i++) {
+  //   if (tocList.value[i].href == location.end.href) {
+  //     tocList.value[i].highLight = true;
+  //     highLightTocIndex.value = {
+  //       p_index: i,
+  //       s_index: null,
+  //     };
+  //     break;
+  //   }
+  //   for (let j = 0; j < tocList.value[i].subitems.length; j++) {
+  //     if (tocList.value[i].subitems[j].href == location.end.href) {
+  //       tocList.value[i].subitems[j].highLight = true;
+  //       highLightTocIndex.value = {
+  //         p_index: i,
+  //         s_index: j,
+  //       };
+  //       break;
+  //     }
+  //   }
 };
 
 const markFinished = () => {
@@ -303,12 +349,7 @@ const markFinished = () => {
             </a>
             <div class="toc-wrapper">
               <nav class="toc-list">
-                <div
-                  class="toc-item"
-                  v-for="item in tocList"
-                  
-                  :key="item.id"
-                >
+                <div class="toc-item" v-for="item in tocList" :key="item.id">
                   <li :class="{ highLight: item.highLight == true }">
                     <a @click="changeToc(item)">{{ item.label }}</a>
                   </li>
@@ -337,7 +378,7 @@ const markFinished = () => {
                 v-for="i in 7"
                 :key="i"
                 :style="`margin-left:${(i - 1) * 48}px;`"
-                @click="changeFont(i)"
+                @click="changeFontSize(i)"
               ></div>
               <div
                 class="slider-line"
@@ -347,6 +388,15 @@ const markFinished = () => {
                 v-show="i == showDot"
               >
                 <div class="right-dot"></div>
+              </div>
+              <div class="select-font">
+                <li
+                  v-for="font in fonts"
+                  :key="font.name"
+                  @click="changeFont(font.value)"
+                >
+                  <a>{{ font.name }}</a>
+                </li>
               </div>
             </div>
           </div>

@@ -12,6 +12,8 @@
 
   --bg-padding: 8rem;
   --margin-inline: 2rem;
+
+  
 }
 
 /* semantic color variables for this project */
@@ -38,9 +40,6 @@
     --margin-inline: 1rem;
   }
 }
-
-
-
 
 /* @media (prefers-color-scheme: dark) {
   :root {

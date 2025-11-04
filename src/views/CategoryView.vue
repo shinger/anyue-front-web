@@ -139,8 +139,9 @@ onBeforeMount(() => {
 
 <style lang="less" scoped>
 .category-wrapper {
-  position: absolute;
-  top: 0;
+  // position: absolute;
+  // top: 0;
+  min-width: 100%;
   padding-inline: var(--bg-padding);
   display: flex;
   justify-content: flex-start;

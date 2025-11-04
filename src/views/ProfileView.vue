@@ -18,7 +18,8 @@
     <div class="reading-info">
       <div class="reading-duration">
         <div class="statistics">
-          {{ readingDuration.hour }}<span v-show="readingDuration.hour > 0">小时</span>
+          {{ readingDuration.hour
+          }}<span v-show="readingDuration.hour > 0">小时</span>
           {{ readingDuration.min }}<span>分钟</span>
         </div>
         <span class="label">阅读时长</span>
@@ -42,11 +43,19 @@
         </div>
       </div>
       <div class="book-list">
-        <a :href="`/book/${item.id}`" v-show="shelfBooks[tabActive].length > 0" class="book-item" v-for="item in shelfBooks[tabActive]" :key="item.id">
+        <a
+          :href="`/book/${item.id}`"
+          v-show="shelfBooks[tabActive].length > 0"
+          class="book-item"
+          v-for="item in shelfBooks[tabActive]"
+          :key="item.id"
+        >
           <img class="book-cover" :src="item.cover" />
           <span class="title">{{ item.title }}</span>
         </a>
-        <div v-show="shelfBooks[tabActive].length == 0" class="no-book">暂无书籍</div>
+        <div v-show="shelfBooks[tabActive].length == 0" class="no-book">
+          暂无书籍
+        </div>
       </div>
       <div class="button"><a href="/bookshelf">查看书架</a></div>
     </div>
@@ -59,13 +68,14 @@ import { ref, reactive, onBeforeMount } from "vue";
 import request from "@/utils/request.js";
 import { useToast } from "vue-toast-notification";
 import { useUserStore } from "@/stores/user";
+import { useShelfStore } from "@/stores/shelf";
 
 const toast = useToast();
 const file = ref(null);
 const fileInput = ref();
 const avatarUrl = ref();
 const userInfo = ref();
-const shelfBooks = reactive([[], []])
+const shelfBooks = reactive([[], []]);
 const tabActive = ref(0);
 const readingDuration = reactive({
   hour: 0,
@@ -73,14 +83,19 @@ const readingDuration = reactive({
 });
 
 const userStore = useUserStore();
+const shelfStore = useShelfStore();
+
 const maxSize = 2 * 1024 * 1024;
 
 onBeforeMount(() => {
-  request.getShelfBooks().then((response) => {
-    shelfBooks[0] = response.splice(0, 5);
-    shelfBooks[1] = shelfBooks[0].filter((item) => item.readingStatus == 2);
-    console.log(shelfBooks)
-  });
+  if (shelfStore.shelfBooks !== null) {
+    request.getShelfBooks().then((response) => {
+      shelfBooks[0] = response.splice(0, 5);
+      shelfBooks[1] = shelfBooks[0].filter((item) => item.readingStatus == 2);
+      shelfStore.setShelfBooks(shelfBooks);
+    });
+  }
+
   if (userStore.userInfo != null) {
     userInfo.value = userStore.userInfo;
     readingDuration.hour = Math.floor(userInfo.value.readingDuration / 60);
@@ -119,7 +134,7 @@ const uploadFile = async () => {
   formData.append("file", file.value);
 
   request
-    .uploadAvatar()
+    .uploadAvatar(formData)
     .then((response) => {
       userInfo.value.avatar = response;
     })

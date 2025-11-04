@@ -29,9 +29,9 @@ axios.interceptors.request.use(
   }
 );
 
-// 请求拦截器，内部根据返回值，重新组装，统一管理。
+// 响应拦截器，内部根据返回值，重新组装，统一管理。
 axios.interceptors.response.use((res) => {
-  console.log(res.data);
+  
   if (typeof res.data !== "object") {
     return Promise.reject(res);
   }
@@ -43,7 +43,7 @@ axios.interceptors.response.use((res) => {
     }
     return Promise.reject(res.data);
   }
-  return res.data.result;
+  return res.data.data;
 });
 
 export default axios;

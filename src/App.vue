@@ -19,6 +19,7 @@ const logout = () => {
 
 onBeforeMount(() => {
   login.updateLogin();
+  
    if (userStore.userInfo != null) {
     userInfo.value = userStore.userInfo;
     return;

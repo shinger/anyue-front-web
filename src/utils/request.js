@@ -2,43 +2,43 @@ import axios from "./axios";
 import md5 from "js-md5";
 
 const baseURL = {
-  web: "/web-api",
+  user: "/user-api",
   filesystem: "/file-api"
 };
 
 const request = {
   userRegister: (data) => {
-    return axios.post(`${baseURL.web}/user/register`, {
+    return axios.post(`${baseURL.user}/user/register`, {
       username: data.username,
       email: data.email,
       password: md5(data.password),
     })
   },
   userLogin: (data) => {
-    return axios.post(`${baseURL.web}/user/login`, {
+    return axios.post(`${baseURL.user}/user/login`, {
       email: data.email,
       password: md5(data.password),
     })
   },
   getRecommends: () => {
-    return axios.get(`${baseURL.web}/recommend/common`);
+    return axios.get(`${baseURL.user}/recommend/common`);
   },
   getUserInfo: () => {
-    return axios.get(`${baseURL.web}/user/info`);
+    return axios.get(`${baseURL.user}/user/info`);
   },
-  uploadAvatar: () => {
-    return axios.post(`${baseURL.filesystem}/user/avatar`, formData, {
+  uploadAvatar: (formData) => {
+    return axios.post(`${baseURL.user}/user/avatar`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     })
   },
   getShelfBooks: () => {
-    return axios.get(`${baseURL.web}/bookshelf/list`);
+    return axios.get(`${baseURL.user}/bookshelf/list`);
   },
   uploadReadingRecord: (data) => {
     return axios
-    .post(`${baseURL.web}/reading/record/upload`, {
+    .post(`${baseURL.user}/reading/record/upload`, {
       bookId: data.bookId,
       lastReadCfi: data.lastReadCfi,
       readingProgress: data.readingProgress,
@@ -46,31 +46,31 @@ const request = {
     })
   },
   getBookInfo: (id) => {
-    return axios.get(`${baseURL.web}/book/${id}`);
+    return axios.get(`${baseURL.user}/book/${id}`);
   },
   getReadingRecord: (id) => {
-    return axios.get(`${baseURL.web}/reading/record/${id}`);
+    return axios.get(`${baseURL.user}/reading/record/${id}`);
   },
   getBookEpub: (id) => {
-    return axios.get(`${baseURL.web}/bookshelf/${id}`);
+    return axios.get(`${baseURL.user}/bookshelf/${id}`);
   },
   getCategories: (id) => {
-    return axios.get(`${baseURL.web}/categories/${id}`);
+    return axios.get(`${baseURL.user}/categories/${id}`);
   },
   getCategoryBooks: (id) => {
-    return axios.get(`${baseURL.web}/book/category/${id}`);
+    return axios.get(`${baseURL.user}/book/category/${id}`);
   },
   getIsInShelf: (id) => {
-    return axios.get(`${baseURL.web}/bookshelf/inshelf/${id}`);
+    return axios.get(`${baseURL.user}/bookshelf/inshelf/${id}`);
   },
   addToShelf: (id) => {
-    return axios.post(`${baseURL.web}/bookshelf/add/${id}`);
+    return axios.post(`${baseURL.user}/bookshelf/add/${id}`);
   },
   removeFromShelf: (id) => {
-    return axios.delete(`${baseURL.web}/bookshelf/remove/${id}`);
+    return axios.delete(`${baseURL.user}/bookshelf/remove/${id}`);
   },
   markFinished: (id) => {
-    return axios.post(`${baseURL.web}/reading/record/finished/${id}`);
+    return axios.post(`${baseURL.user}/reading/record/finished/${id}`);
   },
 };
 
