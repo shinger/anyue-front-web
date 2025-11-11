@@ -12,10 +12,14 @@ svg {
   height: 100%;
 }
 
+* {
+  color: var(--color-text);
+}
+
 a {
   cursor: pointer;
   text-decoration: none;
-  color: var(--anyue-black-font);
+  color: var(--color-text);
 }
 
 h3 {
@@ -25,19 +29,23 @@ h3 {
 ul,
 button,
 input {
-  background-color: #fff;
+  background-color: var(--color-background-light);
   border: 0;
   margin: 0;
   outline: 0;
   padding: 0;
 }
 
+button {
+  border: 1px solid var(--color-border);
+}
+
 .pure-background {
-  background-color: var(--anyue-pure);
+  background-color: var(--anread-pure);
 }
 
 .light-background {
-  background-color: var(--anyue-light);
+  background-color: var(--anread-light);
 }
 
 @media (hover: hover) {

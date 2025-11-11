@@ -86,16 +86,26 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
 import request from "@/utils/request.js";
 import { useToast } from "vue-toast-notification";
 import { useLoginStore } from "@/stores/login";
 
-const login = useLoginStore();
+
+
+const loginStore = useLoginStore();
 const toast = useToast();
 const router = useRouter();
 const activeTab = ref(0);
+
+onBeforeMount(() => {
+    loginStore.updateLogin();
+    if (loginStore.isLogin.value) {
+      router.push("/");
+    }
+});
+
 const registerForm = reactive({
   username: "",
   email: "",
@@ -132,7 +142,7 @@ const submitRegister = () => {
   }
   request.userRegister(registerForm).then((result) => {
     localStorage.setItem("token", result);
-    login.updateLogin();
+    loginStore.updateLogin();
     toast.success("注册成功");
     router.push("/");
   });
@@ -146,9 +156,10 @@ const submitLogin = () => {
   request.userLogin(loginForm).then((result) => {
     console.log(result);
     localStorage.setItem("token", result);
-    login.updateLogin();
+    loginStore.updateLogin();
     toast.success("登录成功");
     router.push("/");
+    // location.reload();
   });
 };
 </script>

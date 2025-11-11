@@ -137,6 +137,7 @@ const uploadFile = async () => {
     .uploadAvatar(formData)
     .then((response) => {
       userInfo.value.avatar = response;
+      location.reload();
     })
     .catch((error) => {
       console.error("上传失败", error);

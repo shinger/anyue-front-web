@@ -1,16 +1,15 @@
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { defineStore } from "pinia";
 
 export const useLoginStore = defineStore("loginStore", () => {
-  let isLogin = false;
-  if (localStorage.token) {
-    isLogin = true;
-  }
+  const isLogin = ref(false);
 
   const updateLogin = () => {
-    isLogin = localStorage.token != null;
-    location.reload;
+    isLogin.value = localStorage.getItem("token") !== null;
   };
 
-  return { isLogin, updateLogin };
+  return {
+    isLogin,
+    updateLogin,
+  };
 });

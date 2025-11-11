@@ -11,6 +11,7 @@ import {
   onUnmounted,
 } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
+import { useThemeStore } from "@/stores/theme-store.js";
 
 const router = useRouter();
 const route = useRoute();
@@ -29,16 +30,8 @@ const readingRecord = ref(null);
 const finishedPage = ref(false);
 const readFinished = ref(false);
 const highLightTocIndex = ref(null);
-const fonts = ref([
-  {
-    name: "默认",
-    value: "system-ui",
-  },
-  {
-    name: "霞鹜文楷",
-    value: "LXGW",
-  },
-]);
+const fonts = ref([]);
+const themeStore = useThemeStore();
 
 // 页面离开前调用
 const beforeLeave = () => {
@@ -77,7 +70,7 @@ onBeforeRouteLeave((to, from) => {
   next();
 });
 
-onMounted(() => {
+onBeforeMount(() => {
   // 添加页面时间监听
   window.addEventListener("beforeunload", beforeLeave);
   window.addEventListener("unload", beforeLeave);
@@ -85,6 +78,11 @@ onMounted(() => {
   // 记录阅读开始时间
   startTime.value = new Date().getTime();
   window.addEventListener("visibilitychange", handleVisibilityChange);
+
+  // 获取字体列表
+  request.getFonts().then((res) => {
+    fonts.value = res;
+  });
 });
 
 // 处理可见性变化
@@ -118,8 +116,21 @@ const changeFontSize = (i) => {
   rendition.value.themes.fontSize(12 + i * 2 + "px");
 };
 
-const changeFont = (font) => {
-  rendition.value.themes.font(font);
+const changeFont = (fontValue) => {
+  console.log("change font: ", fontValue);
+  rendition.value.themes.font(fontValue);
+  rendition.value.hooks.content.register((contents) => {
+    Promise.all([
+      contents.addStylesheetRules(
+        {
+          ".calibre8, .x4, .x9": {
+            "font-family": `${fontValue} !important`,
+          },
+        },
+        "inner-fonts"
+      ),
+    ]);
+  });
 };
 
 // 切换目录
@@ -138,7 +149,12 @@ const onSetting = (i) => {
   if (i == 1) {
   }
   if (i == 3) {
-    testLog();
+    themeStore.setTheme(!themeStore.themeLight);
+    if (themeStore.themeLight) {
+      rendition.value.themes.select("theme-light");
+    } else {
+      rendition.value.themes.select("theme-dark");
+    }
   }
 };
 
@@ -182,18 +198,22 @@ const renderEpub = (url) => {
     manager: "continuous",
   });
 
-  rendition.value.hooks.content.register((contents) => {
-    // Promise.all([
-    //   contents.addStylesheet("http://localhost:9000/general/font.css"),
-    // ]);
-    Promise.all([
-      contents.addStylesheetRules({
-        "@font-face": {
-          "font-family": "LXGW",
-          src: "url('http://127.0.0.1:9000/general/LXGWWenKai-Regular.ttf')",
-        },
-      }, "fonts"),
-    ]);
+  fonts.value.forEach((font) => {
+    if (font.url != null) {
+      rendition.value.hooks.content.register((contents) => {
+        Promise.all(
+          contents.addStylesheetRules(
+            {
+              "@font-face": {
+                "font-family": font.fontValue,
+                src: `url(${font.url})`,
+              },
+            },
+            "fonts"
+          )
+        );
+      });
+    }
   });
 
   // 设置默认样式
@@ -225,7 +245,37 @@ const renderEpub = (url) => {
       ".calibre": {
         "font-size": "1.1em",
       },
+      ".calibre8, .x4, .x9": {
+        "font-family": "inherit !important",
+      },
+      ".theme-dark p": {
+        color: "#fff",
+      },
     });
+
+    themes.registerThemes({
+      "theme-dark": {
+        p: {
+          color: "#fff",
+        },
+        color: "#fff",
+      },
+    });
+
+    themes.registerThemes({
+      "theme-light": {
+        p: {
+          color: "#000",
+        },
+        color: "#000",
+      },
+    });
+
+    if (themeStore.themeLight) {
+      rendition.value.themes.select("theme-light");
+    } else {
+      rendition.value.themes.select("theme-dark");
+    }
   });
 };
 
@@ -392,10 +442,10 @@ const markFinished = () => {
               <div class="select-font">
                 <li
                   v-for="font in fonts"
-                  :key="font.name"
-                  @click="changeFont(font.value)"
+                  :key="font.id"
+                  @click="changeFont(font.fontValue)"
                 >
-                  <a>{{ font.name }}</a>
+                  <a>{{ font.fontName }}</a>
                 </li>
               </div>
             </div>
@@ -418,76 +468,204 @@ const markFinished = () => {
       <div class="sidebar-mask">
         <div class="opt-bar">
           <button class="circle-btn" @click="onSetting(1)">
-            <a class="iconfont"
-              ><svg
-                t="1732024918256"
-                class="icon"
-                viewBox="0 0 1024 1024"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                p-id="1748"
+            <a class="iconfont">
+              <svg
+                v-show="!themeStore.themeLight"
                 width="20"
                 height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M20.48 10.24h983.04v983.04H20.48z"
-                  fill="#FFFFFF"
-                  p-id="1749"
-                ></path>
+                  d="M7.94971 11.9497H39.9497"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
                 <path
-                  d="M112.64 256A30.72 30.72 0 0 1 143.36 225.28h737.28A30.72 30.72 0 0 1 880.64 286.72H143.36a30.72 30.72 0 0 1-30.72-30.72z m0 245.76A30.72 30.72 0 0 1 143.36 471.04h737.28a30.72 30.72 0 0 1 0 61.44H143.36a30.72 30.72 0 0 1-30.72-30.72zM143.36 716.8A30.72 30.72 0 0 0 143.36 778.24h737.28a30.72 30.72 0 0 0 0-61.44H143.36z"
-                  fill="#000000"
-                  p-id="1750"
-                ></path></svg
-            ></a>
+                  d="M7.94971 23.9497H39.9497"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7.94971 35.9497H39.9497"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <svg
+                v-show="themeStore.themeLight"
+                width="20"
+                height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.94971 11.9497H39.9497"
+                  stroke="#000000"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7.94971 23.9497H39.9497"
+                  stroke="#000000"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7.94971 35.9497H39.9497"
+                  stroke="#000000"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
           </button>
           <button class="circle-btn" @click="onSetting(2)">
             <a class="iconfont">
               <svg
-                t="1732025290877"
-                class="icon"
-                viewBox="0 0 1024 1024"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                p-id="1952"
+                v-show="!themeStore.themeLight"
                 width="20"
                 height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M20.48 10.24h983.04v983.04H20.48z"
-                  fill="#FFFFFF"
-                  p-id="1953"
-                ></path>
+                  d="M4 8H32"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
                 <path
-                  d="M539.48416 146.51392a30.72 30.72 0 0 0-54.96832 0L143.03232 829.44a30.72 30.72 0 0 0 54.96832 27.4432l128.12288-256.2048h371.79392l128.08192 256.2048a30.72 30.72 0 1 0 54.96832-27.4432l-135.7824-271.5648a31.00672 31.00672 0 0 0-1.59744-3.19488l-204.10368-408.20736z m127.71328 392.76544H356.84352L512 228.92544l155.19744 310.35392z"
-                  fill="#000000"
-                  p-id="1954"
-                ></path>
+                  d="M28 21H44"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M18 42L18 8"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M36 42L36 21"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <svg
+                v-show="themeStore.themeLight"
+                width="20"
+                height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 8H32"
+                  stroke="#000000"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M28 21H44"
+                  stroke="#000000"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M18 42L18 8"
+                  stroke="#000000"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M36 42L36 21"
+                  stroke="#000000"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
               </svg>
             </a>
           </button>
           <button class="circle-btn" @click="onSetting(3)">
             <a class="iconfont">
               <svg
-                t="1732025364793"
-                class="icon"
-                viewBox="0 0 1024 1024"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                p-id="2156"
+                v-show="themeStore.themeLight"
                 width="20"
                 height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M20.48 10.24h983.04v983.04H20.48z"
-                  fill="#FFFFFF"
-                  p-id="2157"
-                ></path>
+                  d="M24 37C31.1797 37 37 31.1797 37 24C37 16.8203 31.1797 11 24 11C16.8203 11 11 16.8203 11 24C11 31.1797 16.8203 37 24 37Z"
+                  fill="none"
+                  stroke="#000000"
+                  stroke-width="4"
+                  stroke-linejoin="round"
+                />
                 <path
-                  d="M542.72 114.2784a30.72 30.72 0 0 0-61.44 0v75.5712a30.72 30.72 0 0 0 61.44 0V114.2784z m273.8176 85.07392a30.72 30.72 0 0 1 0.12288 43.4176L770.12992 289.5872a30.72 30.72 0 0 1-43.54048-43.29472l46.4896-46.77632a30.72 30.72 0 0 1 43.4176-0.12288zM273.69472 511.26272a238.67392 238.67392 0 1 1 477.34784 0 238.67392 238.67392 0 0 1-477.34784 0z m238.67392-177.27488a177.23392 177.23392 0 1 0 0 354.5088 177.23392 177.23392 0 0 0 0-354.5088zM289.34144 767.09888A30.72 30.72 0 1 0 245.76 723.7632l-38.7072 38.912a30.72 30.72 0 0 0 43.58144 43.33568l38.7072-38.912z m222.65856 34.816a30.72 30.72 0 0 1 30.72 30.72v56.7296a30.72 30.72 0 1 1-61.44 0v-56.7296a30.72 30.72 0 0 1 30.72-30.72z m302.4896-340.29568a30.72 30.72 0 0 0 0 61.44h75.61216a30.72 30.72 0 0 0 0-61.44h-75.61216z m-68.4032 254.40256a30.72 30.72 0 0 1 43.45856 0l46.6944 46.6944a30.72 30.72 0 1 1-43.45856 43.4176l-46.6944-46.65344a30.72 30.72 0 0 1 0-43.4176zM133.9392 480.50176a30.72 30.72 0 0 0 0 61.44h75.61216a30.72 30.72 0 0 0 0-61.44H133.89824z m92.5696-281.10848a30.72 30.72 0 0 1 43.4176 0l38.83008 38.83008a30.72 30.72 0 1 1-43.4176 43.4176l-38.83008-38.78912a30.72 30.72 0 0 1 0-43.4176z"
+                  d="M24 6C25.3807 6 26.5 4.88071 26.5 3.5C26.5 2.11929 25.3807 1 24 1C22.6193 1 21.5 2.11929 21.5 3.5C21.5 4.88071 22.6193 6 24 6Z"
                   fill="#000000"
-                  p-id="2158"
-                ></path>
+                />
+                <path
+                  d="M38.5 12C39.8807 12 41 10.8807 41 9.5C41 8.11929 39.8807 7 38.5 7C37.1193 7 36 8.11929 36 9.5C36 10.8807 37.1193 12 38.5 12Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M44.5 26.5C45.8807 26.5 47 25.3807 47 24C47 22.6193 45.8807 21.5 44.5 21.5C43.1193 21.5 42 22.6193 42 24C42 25.3807 43.1193 26.5 44.5 26.5Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M38.5 41C39.8807 41 41 39.8807 41 38.5C41 37.1193 39.8807 36 38.5 36C37.1193 36 36 37.1193 36 38.5C36 39.8807 37.1193 41 38.5 41Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M24 47C25.3807 47 26.5 45.8807 26.5 44.5C26.5 43.1193 25.3807 42 24 42C22.6193 42 21.5 43.1193 21.5 44.5C21.5 45.8807 22.6193 47 24 47Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M9.5 41C10.8807 41 12 39.8807 12 38.5C12 37.1193 10.8807 36 9.5 36C8.11929 36 7 37.1193 7 38.5C7 39.8807 8.11929 41 9.5 41Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M3.5 26.5C4.88071 26.5 6 25.3807 6 24C6 22.6193 4.88071 21.5 3.5 21.5C2.11929 21.5 1 22.6193 1 24C1 25.3807 2.11929 26.5 3.5 26.5Z"
+                  fill="#000000"
+                />
+                <path
+                  d="M9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.11929 10.8807 7 9.5 7C8.11929 7 7 8.11929 7 9.5C7 10.8807 8.11929 12 9.5 12Z"
+                  fill="#000000"
+                />
+              </svg>
+              <svg
+                v-show="!themeStore.themeLight"
+                width="20"
+                height="20"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M28.0527 4.41085C22.5828 5.83695 18.5455 10.8106 18.5455 16.7273C18.5455 23.7564 24.2436 29.4545 31.2727 29.4545C37.1894 29.4545 42.1631 25.4172 43.5891 19.9473C43.8585 21.256 44 22.6115 44 24C44 35.0457 35.0457 44 24 44C12.9543 44 4 35.0457 4 24C4 12.9543 12.9543 4 24 4C25.3885 4 26.744 4.14149 28.0527 4.41085Z"
+                  fill="none"
+                  stroke="#f5f5f5"
+                  stroke-width="4"
+                  stroke-linejoin="round"
+                />
               </svg>
             </a>
           </button>
@@ -630,7 +808,7 @@ main {
     align-self: center;
     display: flex;
     justify-content: space-between;
-    background: #eceef0;
+    background: var(--color-background-light);
     border-radius: 18px;
     width: 100%;
     height: 32px;
@@ -664,7 +842,7 @@ main {
       top: -32px;
       height: 32px;
       border-radius: 18px;
-      background: #e1e3e6;
+      background: var(--color-background-light);
       display: flex;
       justify-content: flex-end;
       align-items: center;
@@ -675,6 +853,15 @@ main {
         border-radius: 50%;
         width: 24px;
         height: 24px;
+      }
+    }
+    .select-font {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      margin-block: 16px;
+      li {
+        margin: 4px;
       }
     }
   }
@@ -696,7 +883,7 @@ main {
     border: 1px solid #ccc;
     border-color: rgba(0, 0, 0, 0.1);
     border-radius: 12px;
-    background: #fff;
+    background: var(--color-button);
     &:hover {
       cursor: pointer;
       background: #ededed;
