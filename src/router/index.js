@@ -22,7 +22,7 @@ const router = createRouter({
     {
       path: "/book/:id",
       name: "book",
-      component: () => import("@/views/BookView.vue"),
+      component: () => import("@/views/BookViewV2.vue"),
       props: true,
       meta: { requireAuth: false },
     },
@@ -51,13 +51,19 @@ const router = createRouter({
       component: () => import("@/views/ProfileView.vue"),
       meta: { requireAuth: true },
     },
+    {
+      path: "/test",
+      name: "test",
+      component: () => import("@/views/TestView.vue"),
+      meta: { requireAuth: false },
+    },
   ],
 });
 
 router.beforeEach((to, from, next) => {
   // console.log(to);
   // console.log(window.localStorage);
-  
+
   // to and from are both route objects. must call `next`.
   if (to.matched.some((m) => m.meta.requireAuth)) {
     // 需要登录

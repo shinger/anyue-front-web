@@ -1,9 +1,41 @@
-@import "./base.css";
+/* @import "./base.css"; */
+@import "tailwindcss";
 
-#app {
-  /* max-width: 1365px; */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+* {
+  user-select: none;
+}
+
+a,
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  color: #bd763c !important;
+}
+
+textarea {
+  border: none;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+  background-color: transparent;
+  font-size: inherit;
+  resize: none;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+/* #app {
+  max-width: 1365px;
   margin: 0 auto;
-  /* padding: 0 2rem; */
+  padding: 0 2rem;
   font-weight: normal;
 }
 
@@ -71,4 +103,4 @@ button {
 .middle-inline {
   display: inline-block;
   vertical-align: middle;
-}
+} */

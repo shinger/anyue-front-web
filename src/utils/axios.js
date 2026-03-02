@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useRouter } from "vue-router";
-import router from '@/router/index'
+import router from "@/router/index";
 import { useToast } from "vue-toast-notification";
 
 const toast = useToast();
@@ -31,19 +31,27 @@ axios.interceptors.request.use(
 
 // 响应拦截器，内部根据返回值，重新组装，统一管理。
 axios.interceptors.response.use((res) => {
-  
+  // console.log(res.data);
+
   if (typeof res.data !== "object") {
     return Promise.reject(res);
   }
   if (res.data.code != "200") {
     if (res.data.message) toast.error(res.data.message);
     if (res.data.code == "401") {
-      localStorage.removeItem("token")
+      localStorage.removeItem("token");
       router.push({ path: "/login" });
     }
     return Promise.reject(res.data);
   }
   return res.data.data;
+}, error => {
+  console.log(error);
+  if (error.response.status == 401) {
+    localStorage.removeItem("token");
+    router.push({ path: "/login" });
+  }
+  return Promise.reject(error);
 });
 
 export default axios;

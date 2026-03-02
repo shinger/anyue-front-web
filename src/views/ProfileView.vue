@@ -1,7 +1,7 @@
 <template>
-  <div class="profile-wrapper">
-    <div class="top-header">个人主页</div>
-    <div class="information">
+  <div class="flex flex-col justify-evenly items-center">
+    <div class="mt-2.5 text-base font-bold">个人主页</div>
+    <div class="mt-9 flex flex-col items-center">
       <div class="avatar" @click="selectFile">
         <Avatar size="60" :src="userInfo.avatar" />
         <input
@@ -12,53 +12,63 @@
           accept="image/*"
         />
       </div>
-      <span class="username">{{ userInfo.username }}</span>
-      <p class="introduction">不念过往，不惧将来</p>
+      <span class="mt-2.5 text-lg font-semibold text-center leading-4">{{
+        userInfo.username
+      }}</span>
+      <p class="mt-2.5 text-sm text-gray-400">不念过往，不惧将来</p>
     </div>
-    <div class="reading-info">
-      <div class="reading-duration">
-        <div class="statistics">
+    <div class="my-5 flex justify-between">
+      <div class="mx-8 flex flex-col items-center">
+        <div class="text-sm font-semibold">
           {{ readingDuration.hour
-          }}<span v-show="readingDuration.hour > 0">小时</span>
-          {{ readingDuration.min }}<span>分钟</span>
+          }}<span
+            class="text-xs text-gray-400"
+            v-show="readingDuration.hour > 0"
+            >小时</span
+          >
+          {{ readingDuration.min }}<span class="text-xs text-gray-400">分</span>
         </div>
-        <span class="label">阅读时长</span>
+        <span class="text-xs text-gray-400">阅读时长</span>
       </div>
-      <div class="likes-count">
-        <div class="statistics">{{ userInfo.likesCount }}<span>个</span></div>
-        <span class="label">收到的赞</span>
+      <div class="mx-8 flex flex-col items-center">
+        <div class="text-sm font-semibold">
+          {{ userInfo.likesCount }}<span class="text-xs text-gray-400">个</span>
+        </div>
+        <span class="text-xs text-gray-400">收到的赞</span>
       </div>
-      <div class="followers-count">
-        <div class="statistics">{{ userInfo.followers }}<span>人</span></div>
-        <span class="label">关注了我</span>
+      <div class="mx-8 flex flex-col items-center">
+        <div class="text-sm font-semibold">
+          {{ userInfo.followers }}<span class="text-xs text-gray-400">人</span>
+        </div>
+        <span class="text-xs text-gray-400">关注了我</span>
       </div>
     </div>
-    <div class="shelf-info">
-      <div class="tab-nav">
-        <div :class="{ active: tabActive == 0 }" @click="tabActive = 0">
+    <!-- <div class="w-full flex flex-col items-center rounded-xl dark:bg-black mx-4">
+      <div class="mt-3 text-base flex text-gray-300">
+        <div class="mx-16" :class="{ active: tabActive == 0 }" @click="tabActive = 0">
           书架·{{ shelfBooks[0].length }}
         </div>
-        <div :class="{ active: tabActive == 1 }" @click="tabActive = 1">
+        <div class="mx-16" :class="{ active: tabActive == 1 }" @click="tabActive = 1">
           读完·{{ shelfBooks[1].length }}
         </div>
       </div>
-      <div class="book-list">
+      <div class="flex justify-center self-start border-t border-gray-300 w-full mt-3">
         <a
           :href="`/book/${item.id}`"
           v-show="shelfBooks[tabActive].length > 0"
-          class="book-item"
+          class="my-5 mx-4 flex flex-col items-start w-18"
           v-for="item in shelfBooks[tabActive]"
           :key="item.id"
         >
-          <img class="book-cover" :src="item.cover" />
-          <span class="title">{{ item.title }}</span>
+          <img class="w-18 h-24" :src="item.cover" />
+          <span class="w-18 text-sm text-gray-300 truncate">{{ item.title }}</span>
         </a>
-        <div v-show="shelfBooks[tabActive].length == 0" class="no-book">
+        <div v-show="shelfBooks[tabActive].length == 0" class="flex justify-center items-center min-h-30 mt-5 text-sm text-gray-300">
           暂无书籍
         </div>
       </div>
-      <div class="button"><a href="/bookshelf">查看书架</a></div>
-    </div>
+      <div class="mb-5"><a href="/bookshelf">查看书架</a></div>
+    </div> -->
   </div>
 </template>
 
@@ -88,13 +98,13 @@ const shelfStore = useShelfStore();
 const maxSize = 2 * 1024 * 1024;
 
 onBeforeMount(() => {
-  if (shelfStore.shelfBooks !== null) {
-    request.getShelfBooks().then((response) => {
-      shelfBooks[0] = response.splice(0, 5);
-      shelfBooks[1] = shelfBooks[0].filter((item) => item.readingStatus == 2);
-      shelfStore.setShelfBooks(shelfBooks);
-    });
-  }
+  // if (shelfStore.shelfBooks !== null) {
+  //   request.getShelfBooks().then((response) => {
+  //     shelfBooks[0] = response.splice(0, 5);
+  //     shelfBooks[1] = shelfBooks[0].filter((item) => item.readingStatus == 2);
+  //     shelfStore.setShelfBooks(shelfBooks);
+  //   });
+  // }
 
   if (userStore.userInfo != null) {
     userInfo.value = userStore.userInfo;
@@ -145,123 +155,8 @@ const uploadFile = async () => {
 };
 </script>
 
-<style lang="less" scoped>
-.profile-wrapper {
-  position: absolute;
-  // left: 0;
-  // right: 0;
-  height: calc(100vh - 56px);
-  max-width: 1200px;
-  background: var(--color-background-light);
-  padding-inline: var(--bg-padding);
-  display: flex;
-  justify-content: space-evenly;
-  flex-direction: column;
-  align-items: center;
-  .top-header {
-    margin-top: 10px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  .information {
-    margin-top: 36px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    .username {
-      margin-top: 10px;
-      font-size: 18px;
-      font-weight: 600;
-      text-align: center;
-      line-height: 16px;
-    }
-    .introduction {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #b6b6b6;
-    }
-  }
-}
-
-.reading-info {
-  margin-block: 20px;
-  display: flex;
-  justify-content: space-between;
-  & > div {
-    margin-inline: 32px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    .statistics {
-      font-size: 18px;
-      font-weight: 600;
-      span {
-        margin-left: 4px;
-        font-size: 12px;
-      }
-    }
-    .label {
-      font-size: 13px;
-      color: #969696;
-    }
-  }
-}
-
-.shelf-info {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--color-background-pure);
-  border-radius: 12px;
-  .tab-nav {
-    margin-top: 12px;
-    font-size: 16px;
-    display: flex;
-
-    // justify-content: flex-start;
-    color: #969696;
-    // border-bottom: 1px solid var(--color-border);
-    div {
-      margin-inline: 160px;
-      cursor: pointer;
-    }
-    .active {
-      color: #f39a2c;
-    }
-  }
-  .book-list {
-    display: flex;
-    align-self: flex-start;
-    border-top: 1px solid var(--color-border);
-    width: 100%;
-    margin-top: 12px;
-  }
-  .button {
-    font-size: 16px;
-    margin-bottom: 20px;
-  }
-}
-
-.book-item {
-  margin: 20px 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  .book-cover {
-    width: 120px;
-    height: 160px;
-  }
-}
-
-.no-book {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  width: 100%;
-  margin-top: 20px;
-  font-size: 14px;
-  color: #b6b6b6;
+<style scoped>
+.active {
+  color: #f39a2c;
 }
 </style>

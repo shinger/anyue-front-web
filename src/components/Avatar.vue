@@ -8,15 +8,14 @@
 </template>
 
 <script setup>
-import { defineProps, onMounted } from "vue";
+import { defineProps } from "vue";
 
-const props = defineProps(["src", "size"]);
-
-onMounted(() => {
-  if (!props.src || props.src == "") {
-    props.src =
-      "http://127.0.0.1:9000/general/5a3abd0ee2a94fe738954568aedb37c0.png";
-  }
+const props = defineProps({
+  src: String,
+  size: {
+    type: Number,
+    default: 24,
+  },
 });
 </script>
 

@@ -35,9 +35,25 @@ const request = {
       },
     });
   },
+  uploadUserAnnotation: (data) => {
+    return axios.post(`${baseURL.user}/user/annotation/upload`, {
+      userId: data.userId,
+      bookId: data.bookId,
+      epubCfiRange: data.cfiRange,
+      type: data.type,
+      lineColor: data.lineColor,
+    });
+  },
   // 图书服务接口
-  getShelfBooks: () => {
-    return axios.get(`${baseURL.book}/bookshelf/list`);
+  getShelfBooks: (pageNum) => {
+    return axios.get(`${baseURL.book}/bookshelf/list?t=${Date.now()}`, {
+      params: { pageNum: pageNum },
+    }); // 防缓存
+  },
+  getHomeShelfBooks: () => {
+    return axios.get(`${baseURL.book}/bookshelf/list_8?t=${Date.now()}`, {
+      params: { pageNum: 1 },
+    }); // 防缓存
   },
   uploadReadingRecord: (data) => {
     return axios.post(`${baseURL.book}/reading/record/upload`, {
@@ -54,7 +70,7 @@ const request = {
     return axios.get(`${baseURL.book}/reading/record/${id}`);
   },
   getBookEpub: (id) => {
-    return axios.get(`${baseURL.book}/bookshelf/${id}`);
+    return axios.get(`${baseURL.book}/book/epub/${id}`);
   },
   getCategories: (id) => {
     return axios.get(`${baseURL.book}/categories/${id}`);
@@ -66,7 +82,7 @@ const request = {
     return axios.get(`${baseURL.book}/bookshelf/inshelf/${id}`);
   },
   addToShelf: (id) => {
-    return axios.post(`${baseURL.book}/bookshelf/add/${id}`);
+    return axios.post(`${baseURL.book}/bookshelf/join/${id}`);
   },
   removeFromShelf: (id) => {
     return axios.delete(`${baseURL.book}/bookshelf/remove/${id}`);
@@ -75,8 +91,8 @@ const request = {
     return axios.post(`${baseURL.book}/reading/record/finished/${id}`);
   },
   getFonts: () => {
-    return axios.get(`${baseURL.book}/font`)
-  }
+    return axios.get(`${baseURL.book}/font`);
+  },
 };
 
 export default request;

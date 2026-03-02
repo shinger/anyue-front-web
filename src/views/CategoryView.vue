@@ -1,33 +1,37 @@
 <template>
-  <main class="category-wrapper">
-    <div class="left-category-list">
+  <main class="min-w-full flex justify-start">
+    <ul class="w-1/5 min-h-[calc(100vh-64px)] border-r-2 border-gray-300">
       <li
-        class="category-item"
+        class="w-full h-8 my-2 leading-8 text-sm text-center rounded-lg pl-2 cursor-pointer lg:text-lg font-bold lg:h-12 flex justify-end items-center"
         v-for="item in categoryList"
         :key="item.id"
         @click="changeCategory(item)"
-        :class="{ active: activeMainCategory === item }"
       >
-        <span href="">{{ item.categoryName }}</span>
+        <div class="w-full h-full mr-2 sm:w-28 sm:h-10" :class="{ activeTab: activeMainCategory === item }">
+          <span class="lg:text-md">{{ item.categoryName }}</span>
+        </div>
       </li>
-    </div>
-    <div class="right-category-content">
-      <div class="sub-category-top">
+    </ul>
+    <div class="w-4/5">
+      <div class="p-3 border-b-2 border-gray-300 flex flex-col">
         <h3>
           {{
             activeMainCategory == null ? "" : activeMainCategory.categoryName
           }}
         </h3>
-        <div class="sub-category-list" v-if="subCategoryList.length != 0">
+        <ul
+          class="mt-2 flex flex-wrap gap-4"
+          v-if="subCategoryList.length != 0"
+        >
           <li
-            class="sub-category-item"
+            class="w-20 text-gray-600 cursor-pointer hover:text-black"
             @click="getAll"
             :class="{ active: isAll == true }"
           >
             全部
           </li>
           <li
-            class="sub-category-item"
+            class="w-20 text-gray-600 cursor-pointer hover:text-black"
             v-for="item in subCategoryList"
             :key="item.id"
             @click="changeSubCategory(item)"
@@ -35,23 +39,27 @@
           >
             {{ item.categoryName }}
           </li>
-        </div>
+        </ul>
       </div>
-      <div class="book-list">
+      <div class="mt-2">
         <div
-          class="book-item"
+          class="flex justify-center items-center px-4 py-2 cursor-pointer"
           v-for="item in currentBookList"
           :key="item.id"
           @click="toIntroPage(item.id)"
         >
-          <img class="book-cover" :src="item.cover" />
-          <div class="book-content">
-            <h3>{{ item.title }}</h3>
-            <span class="author">{{ item.author }}</span>
-            <span class="readership"
-              >{{ item.readership }}人在读 | 推荐值 92.3%</span
-            >
-            <p class="introduction">
+          <img
+            class="w-24 h-32 hover:scale-105 transition-all duration-300"
+            :src="item.cover"
+          />
+          <div class="w-full pl-2">
+            <h3 class="hover:text-[#b05f13]">{{ item.title }}</h3>
+            <p class="text-sm text-gray-400 my-1">{{ item.author }}</p>
+            <p class="text-sm text-gray-400 my-1">
+              {{ item.readership }}人在读
+            </p>
+            <p class="text-sm text-gray-400 my-1">推荐值 92.3%</p>
+            <p class="text-sm text-gray-400 hidden">
               {{ item.introduction }}
             </p>
           </div>
@@ -137,98 +145,14 @@ onBeforeMount(() => {
 });
 </script>
 
-<style lang="less" scoped>
-.category-wrapper {
-  // position: absolute;
-  // top: 0;
-  min-width: 100%;
-  padding-inline: var(--bg-padding);
-  display: flex;
-  justify-content: flex-start;
+<style scoped>
+.active {
+  color: #df8e41 !important;
 }
-.left-category-list {
-  width: 200px;
-  height: calc(100vh - 50px);
-  // border-right: 2px solid var(--color-border);
-  .category-item {
-    margin-block: 8px;
-    width: 100%;
-    height: 42px;
-    line-height: 42px;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 8px;
-    padding-left: 12px;
-    &:hover {
-      cursor: pointer;
-      background: var(--color-background-hover);
-    }
-  }
-  .active {
-    background: #f6963c !important;
-    color: #fff I !important;
-  }
-}
-.right-category-content {
-  width: 100%;
-  border-left: 2px solid var(--color-border);
-  .sub-category-top {
-    padding: 20px 20px;
-    border-bottom: 2px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
-  }
-}
-.sub-category-list {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  // grid-template-columns: repeat(5, 1fr); /* 创建 5 列 */
-  // grid-template-rows: repeat(3, 40px); /* 创建 3 行，每行高度 100px */
-  gap: 50px; /* 网格项之间的间距 */
-  font-size: 16px;
 
-  .sub-category-item {
-    cursor: pointer;
-    font-weight: 1000;
-    color: #424242;
-    &:hover {
-      color: #000;
-    }
-  }
-
-  .active {
-    color: #f6963c !important;
-  }
-}
-.book-list {
-  margin-top: 40px;
-  .book-item {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 24px 18px;
-    &:hover {
-      background: var(--color-background-hover);
-      cursor: pointer;
-    }
-    .book-cover {
-      width: 120px;
-      height: 162px;
-    }
-    .book-content {
-      width: 600px;
-      margin: 12px 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      .author,
-      .readership,
-      .introduction {
-        color: var(--color-little-word);
-        font-size: 14px;
-      }
-    }
-  }
+.activeTab {
+  background-color: #fb8a1ee0;
+  color: white !important;
+  border-radius: 6px;
 }
 </style>
